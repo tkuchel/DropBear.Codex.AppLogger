@@ -7,58 +7,71 @@ using Microsoft.Extensions.Logging;
 using ZLogger;
 using ZLogger.Providers;
 
-namespace DropBear.Codex.AppLogger.Extensions;
-
-public static class ServiceCollectionExtensions
+namespace DropBear.Codex.AppLogger.Extensions
 {
-    public static IServiceCollection AddAppLogger(this IServiceCollection services)
-    {
-        // Check if an ILogger<T> is already configured, considering any T
-        var loggerExists = services.Any(service =>
-            service.ServiceType.IsGenericType &&
-            service.ServiceType.GetGenericTypeDefinition() == typeof(ILogger<>));
-
-        if (!loggerExists)
-            ConfigureZLogger(services);
-
-        return AddLoggingAdapter(services);
-    }
-
-
-    private static IServiceCollection AddLoggingAdapter(this IServiceCollection services)
-    {
-        services.AddSingleton(typeof(IAppLogger<>), typeof(AppLogger<>));
-        return services;
-    }
-
     /// <summary>
-    ///     Configures ZLogger logging services.
+    /// Extensions for configuring application logging services.
     /// </summary>
-    /// <param name="services">The IServiceCollection to add logging services to.</param>
-    private static void ConfigureZLogger(IServiceCollection services) =>
-        services.AddLogging(builder =>
+    public static class ServiceCollectionExtensions
+    {
+        /// <summary>
+        /// Adds application logger services to the specified <see cref="IServiceCollection"/>.
+        /// </summary>
+        /// <param name="services">The <see cref="IServiceCollection"/> to add logging services to.</param>
+        /// <returns>The modified <see cref="IServiceCollection"/> with added logging services.</returns>
+        public static IServiceCollection AddAppLogger(this IServiceCollection services)
         {
-            builder.ClearProviders()
-                .SetMinimumLevel(LogLevel.Debug)
-                .AddZLoggerConsole(options =>
-                {
-                    options.UseJsonFormatter(formatter =>
-                    {
-                        formatter.IncludeProperties = IncludeProperties.ParameterKeyValues;
-                    });
-                })
-                .AddZLoggerRollingFile(options =>
-                {
-                    options.FilePathSelector = (timestamp, sequenceNumber) => new StringBuilder()
-                        .Append("logs/")
-                        .Append(timestamp.ToLocalTime().ToString("yyyy-MM-dd", CultureInfo.CurrentCulture))
-                        .Append('_')
-                        .Append(sequenceNumber.ToString("000", CultureInfo.CurrentCulture))
-                        .Append(".log")
-                        .ToString();
+            // Check if an ILogger<T> is already configured, considering any T
+            var loggerExists = services.Any(service =>
+                service.ServiceType.IsGenericType &&
+                service.ServiceType.GetGenericTypeDefinition() == typeof(ILogger<>));
 
-                    options.RollingInterval = RollingInterval.Day;
-                    options.RollingSizeKB = 1024; // 1MB
-                });
-        });
+            if (!loggerExists)
+                ConfigureZLogger(services);
+
+            return AddLoggingAdapter(services);
+        }
+
+        /// <summary>
+        /// Adds the logging adapter service to the specified <see cref="IServiceCollection"/>.
+        /// </summary>
+        /// <param name="services">The <see cref="IServiceCollection"/> to add the logging adapter service to.</param>
+        /// <returns>The modified <see cref="IServiceCollection"/> with added logging adapter service.</returns>
+        private static IServiceCollection AddLoggingAdapter(this IServiceCollection services)
+        {
+            services.AddSingleton(typeof(IAppLogger<>), typeof(AppLogger<>));
+            return services;
+        }
+
+        /// <summary>
+        /// Configures ZLogger logging services.
+        /// </summary>
+        /// <param name="services">The <see cref="IServiceCollection"/> to add logging services to.</param>
+        private static void ConfigureZLogger(IServiceCollection services) =>
+            services.AddLogging(builder =>
+            {
+                builder.ClearProviders()
+                    .SetMinimumLevel(LogLevel.Debug)
+                    .AddZLoggerConsole(options =>
+                    {
+                        options.UseJsonFormatter(formatter =>
+                        {
+                            formatter.IncludeProperties = IncludeProperties.ParameterKeyValues;
+                        });
+                    })
+                    .AddZLoggerRollingFile(options =>
+                    {
+                        options.FilePathSelector = (timestamp, sequenceNumber) => new StringBuilder()
+                            .Append("logs/")
+                            .Append(timestamp.ToLocalTime().ToString("yyyy-MM-dd", CultureInfo.CurrentCulture))
+                            .Append('_')
+                            .Append(sequenceNumber.ToString("000", CultureInfo.CurrentCulture))
+                            .Append(".log")
+                            .ToString();
+
+                        options.RollingInterval = RollingInterval.Day;
+                        options.RollingSizeKB = 1024; // 1MB
+                    });
+            });
+    }
 }

@@ -45,4 +45,9 @@ public interface IAppLogger<T>
     /// <param name="exception">The exception to log.</param>
     /// <param name="message">The optional message to log alongside the exception.</param>
     void LogCritical(Exception exception, string message = "");
+
+    /// <summary>
+    ///     Returns a logger for the specified context type.
+    /// </summary>
+    IAppLogger<TContext> ForContext<TContext>();
 }

@@ -10,14 +10,18 @@ namespace DropBear.Codex.AppLogger.LoggingStrategies;
 public class StandardLoggerStrategy<T> : ILoggingStrategy
 {
     private readonly ILogger<T> _logger;
+    private readonly ILoggerFactory _loggerFactory;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="StandardLoggerStrategy{T}" /> class.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
-    public StandardLoggerStrategy(ILogger<T> logger) =>
+    /// <param name="loggerFactory">The logger factory instance.</param>
+    public StandardLoggerStrategy(ILogger<T> logger, ILoggerFactory loggerFactory)
+    {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
+        _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+    }
     /// <inheritdoc />
     public void LogDebug(string message)
     {
@@ -52,5 +56,11 @@ public class StandardLoggerStrategy<T> : ILoggingStrategy
     {
         var logAction = LoggerMessage.Define<string>(LogLevel.Critical, new EventId(5, "LogCritical"), "{Message}");
         logAction(_logger, message, exception);
+    }
+    
+    /// <inheritdoc />
+    public ILogger<TContext> GetLogger<TContext>()
+    {
+        return _loggerFactory.CreateLogger<TContext>();
     }
 }

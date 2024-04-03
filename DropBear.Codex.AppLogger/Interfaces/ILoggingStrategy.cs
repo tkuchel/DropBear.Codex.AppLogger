@@ -1,4 +1,6 @@
-﻿namespace DropBear.Codex.AppLogger.Interfaces;
+﻿using Microsoft.Extensions.Logging;
+
+namespace DropBear.Codex.AppLogger.Interfaces;
 
 /// <summary>
 ///     Interface for defining logging strategies.
@@ -36,4 +38,11 @@ public interface ILoggingStrategy
     /// <param name="message">The critical error message to log.</param>
     /// <param name="exception">The exception associated with the critical error, if any.</param>
     void LogCritical(string message, Exception? exception = null);
+
+    /// <summary>
+    /// Gets the logger instance for the specified type.
+    /// </summary>
+    /// <typeparam name="TContext">The type of the logger to get.</typeparam>
+    /// <returns>The logger instance for the specified type.</returns>
+    ILogger<TContext> GetLogger<TContext>();
 }

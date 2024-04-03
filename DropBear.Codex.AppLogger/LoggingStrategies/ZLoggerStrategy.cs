@@ -11,12 +11,18 @@ namespace DropBear.Codex.AppLogger.LoggingStrategies;
 public class ZLoggerStrategy<T> : ILoggingStrategy
 {
     private readonly ILogger<T> _logger;
+    private readonly ILoggerFactory _loggerFactory;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="ZLoggerStrategy{T}" /> class.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
-    public ZLoggerStrategy(ILogger<T> logger) => _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    /// <param name="loggerFactory">The logger factory instance.</param>
+    public ZLoggerStrategy(ILogger<T> logger, ILoggerFactory loggerFactory)
+    {
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+    }
 
     /// <inheritdoc />
     public void LogDebug(string message) => _logger.ZLogDebug($"[D]: {message}");
@@ -34,4 +40,10 @@ public class ZLoggerStrategy<T> : ILoggingStrategy
     /// <inheritdoc />
     public void LogCritical(string message, Exception? exception = null) =>
         _logger.ZLogCritical(exception, $"[C]: {message}");
+
+    /// <inheritdoc />
+    public ILogger<TContext> GetLogger<TContext>()
+    {
+        return _loggerFactory.CreateLogger<TContext>();
+    }
 }

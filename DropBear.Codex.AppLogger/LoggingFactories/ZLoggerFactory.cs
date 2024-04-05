@@ -2,12 +2,13 @@
 using Microsoft.Extensions.Logging;
 using ZLogger;
 using ZLogger.Providers;
+using ILoggerFactory = DropBear.Codex.AppLogger.Interfaces.ILoggerFactory;
 
 namespace DropBear.Codex.AppLogger.LoggingFactories;
 
-public class ZLoggerFactory : ILoggingFactory, IDisposable
+public class ZLoggerFactory : ILoggerFactory, IDisposable
 {
-    private readonly ILoggerFactory _loggerFactory;
+    private readonly Microsoft.Extensions.Logging.ILoggerFactory _loggerFactory;
     private bool _disposed;
 
     // ReSharper disable once InconsistentNaming

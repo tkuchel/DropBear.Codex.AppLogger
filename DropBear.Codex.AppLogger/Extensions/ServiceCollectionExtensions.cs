@@ -27,8 +27,6 @@ public static class ServiceCollectionExtensions
         var loggerFactory = builder.Build();
 
         // Register the factory with the DI container.
-        // Since loggerFactory is an ILoggingFactory, but services expect an ILoggerFactory,
-        // ensure your ILoggingFactory implementation is compatible or adapt as necessary.
         // ReSharper disable once SuspiciousTypeConversion.Global
         services.AddSingleton<ILoggerFactory>(_ =>
             loggerFactory as ILoggerFactory ??

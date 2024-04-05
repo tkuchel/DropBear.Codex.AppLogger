@@ -1,6 +1,7 @@
 ﻿using DropBear.Codex.AppLogger.Interfaces;
 using DropBear.Codex.AppLogger.LoggingFactories;
 using Microsoft.Extensions.Logging;
+using ILoggerFactory = DropBear.Codex.AppLogger.Interfaces.ILoggerFactory;
 
 namespace DropBear.Codex.AppLogger.Builders;
 
@@ -48,7 +49,7 @@ public class LoggerConfigurationBuilder
         return this;
     }
 
-    public ILoggingFactory Build()
+    public ILoggerFactory Build()
     {
             return new ZLoggerFactory(_logLevel, _consoleOutput,_rollingFilePath, _rollingSizeKB, _useJsonFormatter);
     }

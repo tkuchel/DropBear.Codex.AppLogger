@@ -5,7 +5,7 @@ namespace DropBear.Codex.AppLogger.Interfaces;
 /// <summary>
 ///     Defines the interface for a logging factory.
 /// </summary>
-public interface ILoggingFactory
+public interface ILoggerFactory
 {
     /// <summary>
     ///     Creates and returns a logger instance.

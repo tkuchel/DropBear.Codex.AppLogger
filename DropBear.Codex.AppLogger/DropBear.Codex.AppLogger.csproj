@@ -8,7 +8,8 @@
         <Title>DropBear.Codex.AppLogger</Title>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Authors>Terrence Kuchel (DropBear)</Authors>
-        <Description>DropBear Codex AppLogger</Description>
+        <Description>DropBear.Codex.AppLogger is a flexible and configurable logging library designed to wrap around existing logging frameworks. It provides a fluent API for configuring logging behavior, including support for console and file outputs, custom log formats, and more. The library aims to make logging in .NET applications straightforward and adaptable.
+        </Description>
         <Copyright>2024 Terrence Kuchel</Copyright>
         <PackageProjectUrl>https://github.com/tkuchel/DropBear.Codex.AppLogger</PackageProjectUrl>
         <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
@@ -28,6 +29,8 @@
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.1" />
+      <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
       <PackageReference Include="ZLogger" Version="2.4.1" />
     </ItemGroup>
 

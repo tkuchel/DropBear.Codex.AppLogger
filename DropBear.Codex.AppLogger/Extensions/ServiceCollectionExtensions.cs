@@ -1,11 +1,6 @@
-﻿using System.Globalization;
-using System.Text;
-using DropBear.Codex.AppLogger.Interfaces;
-using DropBear.Codex.AppLogger.Loggers;
+﻿using DropBear.Codex.AppLogger.Builders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using ZLogger;
-using ZLogger.Providers;
 
 namespace DropBear.Codex.AppLogger.Extensions;
 
@@ -18,59 +13,32 @@ public static class ServiceCollectionExtensions
     ///     Adds application logger services to the specified <see cref="IServiceCollection" />.
     /// </summary>
     /// <param name="services">The <see cref="IServiceCollection" /> to add logging services to.</param>
+    /// <param name="configure">The logger configuration builder configuration action.</param>
     /// <returns>The modified <see cref="IServiceCollection" /> with added logging services.</returns>
-    public static IServiceCollection AddAppLogger(this IServiceCollection services)
+    public static IServiceCollection AddAppLogger(this IServiceCollection services,
+        Action<LoggerConfigurationBuilder> configure)
     {
-        // Check if an ILogger<T> is already configured, considering any T
-        var loggerExists = services.Any(service =>
-            service.ServiceType.IsGenericType &&
-            service.ServiceType.GetGenericTypeDefinition() == typeof(ILogger<>));
+        // Create a new instance of LoggerConfigurationBuilder
+        var builder = new LoggerConfigurationBuilder();
+        // Apply the user-provided configurations
+        configure(builder);
 
-        if (!loggerExists)
-            ConfigureZLogger(services);
+        // Build the appropriate ILoggerFactory based on the configuration
+        var loggerFactory = builder.Build();
 
-        return AddLoggingAdapter(services);
-    }
+        // Register the factory with the DI container.
+        // Since loggerFactory is an ILoggingFactory, but services expect an ILoggerFactory,
+        // ensure your ILoggingFactory implementation is compatible or adapt as necessary.
+        services.AddSingleton<ILoggerFactory>(serviceProvider =>
+        {
+            // This assumes your ILoggingFactory implementation somehow provides an ILoggerFactory.
+            // Adjust this line if your implementation differs.
+            return loggerFactory as ILoggerFactory;
+        });
 
-    /// <summary>
-    ///     Adds the logging adapter service to the specified <see cref="IServiceCollection" />.
-    /// </summary>
-    /// <param name="services">The <see cref="IServiceCollection" /> to add the logging adapter service to.</param>
-    /// <returns>The modified <see cref="IServiceCollection" /> with added logging adapter service.</returns>
-    private static IServiceCollection AddLoggingAdapter(this IServiceCollection services)
-    {
-        services.AddSingleton(typeof(IAppLogger<>), typeof(AppLogger<>));
+        // Optional: register ILogger<T> to be resolved via the factory
+        services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
+
         return services;
     }
-
-    /// <summary>
-    ///     Configures ZLogger logging services.
-    /// </summary>
-    /// <param name="services">The <see cref="IServiceCollection" /> to add logging services to.</param>
-    private static void ConfigureZLogger(IServiceCollection services) =>
-        services.AddLogging(builder =>
-        {
-            builder.ClearProviders()
-                .SetMinimumLevel(LogLevel.Debug)
-                .AddZLoggerConsole(options =>
-                {
-                    options.UseJsonFormatter(formatter =>
-                    {
-                        formatter.IncludeProperties = IncludeProperties.ParameterKeyValues;
-                    });
-                })
-                .AddZLoggerRollingFile(options =>
-                {
-                    options.FilePathSelector = (timestamp, sequenceNumber) => new StringBuilder()
-                        .Append("logs/")
-                        .Append(timestamp.ToLocalTime().ToString("yyyy-MM-dd", CultureInfo.CurrentCulture))
-                        .Append('_')
-                        .Append(sequenceNumber.ToString("000", CultureInfo.CurrentCulture))
-                        .Append(".log")
-                        .ToString();
-
-                    options.RollingInterval = RollingInterval.Day;
-                    options.RollingSizeKB = 1024; // 1MB
-                });
-        });
 }

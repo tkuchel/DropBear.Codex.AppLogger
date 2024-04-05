@@ -8,8 +8,7 @@
 
 - Fluent API for easy configuration
 - Supports console and file logging
-- Customizable log formats
-- Integrates with `Microsoft.Extensions.Logging` and ZLogger
+- Integrates with ZLogger
 - Provides extension methods for easy setup with dependency injection containers
 
 ## Getting Started

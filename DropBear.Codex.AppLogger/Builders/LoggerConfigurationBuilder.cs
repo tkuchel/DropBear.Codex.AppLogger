@@ -18,6 +18,7 @@ public class LoggerConfigurationBuilder
     private bool _useJsonFormatter;
 
 
+    // ReSharper disable once UnusedMember.Global
     public LoggerConfigurationBuilder UseJsonFormatter(bool useJson = true)
     {
         _useJsonFormatter = useJson;
@@ -25,6 +26,7 @@ public class LoggerConfigurationBuilder
     }
 
     // ReSharper disable once InconsistentNaming
+    // ReSharper disable once UnusedMember.Global
     public LoggerConfigurationBuilder ConfigureRollingFile(string path, int sizeKB)
     {
         _rollingFilePath = path;
@@ -32,12 +34,14 @@ public class LoggerConfigurationBuilder
         return this;
     }
 
+    // ReSharper disable once UnusedMember.Global
     public LoggerConfigurationBuilder SetLogLevel(LogLevel logLevel)
     {
         _logLevel = logLevel;
         return this;
     }
 
+    // ReSharper disable once UnusedMember.Global
     public LoggerConfigurationBuilder EnableConsoleOutput(bool enable = true)
     {
         _consoleOutput = enable;
@@ -46,13 +50,6 @@ public class LoggerConfigurationBuilder
 
     public ILoggingFactory Build()
     {
-        // Choose the factory based on specific conditions or configurations
-        if (_useJsonFormatter || !string.IsNullOrEmpty(_rollingFilePath))
-            // Use ZLoggerFactory for JSON formatting and rolling file support
-            // Assuming ZLoggerFactory's constructor is adjusted to accept logFormat
             return new ZLoggerFactory(_logLevel, _consoleOutput,_rollingFilePath, _rollingSizeKB, _useJsonFormatter);
-        // Default to MicrosoftLoggerFactory, now supporting file path and custom log formats
-        // Assuming MicrosoftLoggerFactory's constructor is adjusted to accept logFormat
-        return new MicrosoftLoggerFactory(_logLevel, _consoleOutput);
     }
 }

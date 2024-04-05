@@ -10,7 +10,6 @@ namespace DropBear.Codex.AppLogger.Builders;
 public class LoggerConfigurationBuilder
 {
     private bool _consoleOutput = true;
-    private string _filePath = string.Empty;
     private LogLevel _logLevel = LogLevel.Information;
     private string _rollingFilePath = "logs/";
 
@@ -45,21 +44,15 @@ public class LoggerConfigurationBuilder
         return this;
     }
 
-    public LoggerConfigurationBuilder SetOutputFilePath(string filePath)
-    {
-        _filePath = filePath;
-        return this;
-    }
-
-
     public ILoggingFactory Build()
     {
         // Choose the factory based on specific conditions or configurations
-        // Example logic can be included here to decide between MicrosoftLoggerFactory and ZLoggerFactory
         if (_useJsonFormatter || !string.IsNullOrEmpty(_rollingFilePath))
             // Use ZLoggerFactory for JSON formatting and rolling file support
-            return new ZLoggerFactory(_logLevel, _consoleOutput, _rollingSizeKB, _useJsonFormatter);
+            // Assuming ZLoggerFactory's constructor is adjusted to accept logFormat
+            return new ZLoggerFactory(_logLevel, _consoleOutput,_rollingFilePath, _rollingSizeKB, _useJsonFormatter);
         // Default to MicrosoftLoggerFactory, now supporting file path and custom log formats
-        return new MicrosoftLoggerFactory(_logLevel, _consoleOutput, _filePath);
+        // Assuming MicrosoftLoggerFactory's constructor is adjusted to accept logFormat
+        return new MicrosoftLoggerFactory(_logLevel, _consoleOutput);
     }
 }

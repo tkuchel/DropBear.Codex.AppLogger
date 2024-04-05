@@ -12,5 +12,5 @@ public interface ILoggingFactory
     /// </summary>
     /// <typeparam name="T">The type for which the logger is being created.</typeparam>
     /// <returns>The logger instance.</returns>
-    ILogger CreateLogger<T>();
+    ILogger<T> CreateLogger<T>();
 }

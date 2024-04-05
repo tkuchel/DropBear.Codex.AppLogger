@@ -10,10 +10,11 @@ namespace DropBear.Codex.AppLogger.Builders;
 public class LoggerConfigurationBuilder
 {
     private bool _consoleOutput = true;
-    private string _filePath; // For MicrosoftLoggerFactory file logging
-    private string _logFormat = "{Timestamp:o} [{Level}] {Message}{NewLine}{Exception}"; // For custom log formats
+    private string _filePath = string.Empty;
     private LogLevel _logLevel = LogLevel.Information;
     private string _rollingFilePath = "logs/";
+
+    // ReSharper disable once InconsistentNaming
     private int _rollingSizeKB = 1024; // Default to 1 MB
     private bool _useJsonFormatter;
 
@@ -24,6 +25,7 @@ public class LoggerConfigurationBuilder
         return this;
     }
 
+    // ReSharper disable once InconsistentNaming
     public LoggerConfigurationBuilder ConfigureRollingFile(string path, int sizeKB)
     {
         _rollingFilePath = path;
@@ -49,11 +51,6 @@ public class LoggerConfigurationBuilder
         return this;
     }
 
-    public LoggerConfigurationBuilder SetLogFormat(string logFormat)
-    {
-        _logFormat = logFormat;
-        return this;
-    }
 
     public ILoggingFactory Build()
     {
@@ -61,8 +58,8 @@ public class LoggerConfigurationBuilder
         // Example logic can be included here to decide between MicrosoftLoggerFactory and ZLoggerFactory
         if (_useJsonFormatter || !string.IsNullOrEmpty(_rollingFilePath))
             // Use ZLoggerFactory for JSON formatting and rolling file support
-            return new ZLoggerFactory(_logLevel, _consoleOutput, _rollingFilePath, _rollingSizeKB, _useJsonFormatter);
+            return new ZLoggerFactory(_logLevel, _consoleOutput, _rollingSizeKB, _useJsonFormatter);
         // Default to MicrosoftLoggerFactory, now supporting file path and custom log formats
-        return new MicrosoftLoggerFactory(_logLevel, _consoleOutput, _filePath, _logFormat);
+        return new MicrosoftLoggerFactory(_logLevel, _consoleOutput, _filePath);
     }
 }

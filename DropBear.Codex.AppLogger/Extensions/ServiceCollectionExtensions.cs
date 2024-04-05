@@ -29,12 +29,10 @@ public static class ServiceCollectionExtensions
         // Register the factory with the DI container.
         // Since loggerFactory is an ILoggingFactory, but services expect an ILoggerFactory,
         // ensure your ILoggingFactory implementation is compatible or adapt as necessary.
-        services.AddSingleton<ILoggerFactory>(serviceProvider =>
-        {
-            // This assumes your ILoggingFactory implementation somehow provides an ILoggerFactory.
-            // Adjust this line if your implementation differs.
-            return loggerFactory as ILoggerFactory;
-        });
+        // ReSharper disable once SuspiciousTypeConversion.Global
+        services.AddSingleton<ILoggerFactory>(_ =>
+            loggerFactory as ILoggerFactory ??
+            throw new InvalidOperationException("Logger factory is not compatible with ILoggerFactory."));
 
         // Optional: register ILogger<T> to be resolved via the factory
         services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));

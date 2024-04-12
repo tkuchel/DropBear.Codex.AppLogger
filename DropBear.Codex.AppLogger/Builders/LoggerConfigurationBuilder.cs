@@ -1,5 +1,6 @@
 ﻿using DropBear.Codex.AppLogger.Interfaces;
 using DropBear.Codex.AppLogger.LoggingFactories;
+using DropBear.Codex.AppLogger.Utils;
 using Microsoft.Extensions.Logging;
 using ILoggerFactory = DropBear.Codex.AppLogger.Interfaces.ILoggerFactory;
 
@@ -32,6 +33,12 @@ public class LoggerConfigurationBuilder
     {
         _rollingFilePath = path;
         _rollingSizeKB = sizeKB;
+
+        var directoryTestResult = FilePathValidator.ValidateAndPrepareDirectoryAsync(_rollingFilePath).ConfigureAwait(false);
+        
+        if (!directoryTestResult.GetAwaiter().GetResult())
+            throw new DirectoryNotFoundException($"Directory {_rollingFilePath} does not exist");
+        
         return this;
     }
 

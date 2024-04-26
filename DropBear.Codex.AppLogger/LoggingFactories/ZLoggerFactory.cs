@@ -52,14 +52,21 @@ public class ZLoggerFactory : ILoggerFactory, IDisposable
         builder.ClearProviders()
             .SetMinimumLevel(logLevel);
 
-        if (consoleOutput && useJsonFormatter)
-            builder.AddZLoggerConsole(options =>
-            {
-                options.UseJsonFormatter(formatter =>
+        switch (consoleOutput)
+        {
+            case true when useJsonFormatter:
+                builder.AddZLoggerConsole(options =>
                 {
-                    formatter.IncludeProperties = IncludeProperties.ParameterKeyValues;
+                    options.UseJsonFormatter(formatter =>
+                    {
+                        formatter.IncludeProperties = IncludeProperties.ParameterKeyValues;
+                    });
                 });
-            });
+                break;
+            case true:
+                builder.AddZLoggerConsole();
+                break;
+        }
 
         builder.AddZLoggerRollingFile(x =>
         {

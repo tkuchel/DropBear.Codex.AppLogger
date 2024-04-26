@@ -1,5 +1,3 @@
-
-using DropBear.Codex.AppLogger.Interfaces;
 using Microsoft.Extensions.Logging;
 using ZLogger;
 using ZLogger.Providers;
@@ -7,7 +5,7 @@ using ILoggerFactory = DropBear.Codex.AppLogger.Interfaces.ILoggerFactory;
 
 namespace DropBear.Codex.AppLogger.LoggingFactories;
 
-public class ZLoggerFactory : ILoggerFactory, IDisposable
+public sealed class ZLoggerFactory : ILoggerFactory, IDisposable
 {
     private readonly Microsoft.Extensions.Logging.ILoggerFactory _loggerFactory;
     private bool _disposed;
@@ -17,7 +15,7 @@ public class ZLoggerFactory : ILoggerFactory, IDisposable
         _loggerFactory = LoggerFactory.Create(builder =>
         {
             if (string.IsNullOrEmpty(rollingFilePath))
-                throw new ArgumentNullException(nameof(rollingFilePath), "Rolling file path cannot be null or empty");
+                throw new ArgumentException("Rolling file path cannot be empty", nameof(rollingFilePath));
 
             if (!Directory.Exists(rollingFilePath))
                 throw new DirectoryNotFoundException($"Directory {rollingFilePath} does not exist");
@@ -27,9 +25,8 @@ public class ZLoggerFactory : ILoggerFactory, IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
-        _loggerFactory.Dispose();
-        _disposed = true;
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 
     public ILogger<T> CreateLogger<T>()
@@ -38,13 +35,22 @@ public class ZLoggerFactory : ILoggerFactory, IDisposable
         return _loggerFactory.CreateLogger<T>();
     }
 
-    public ILogger CreateLogger(string categoryName)
+    public ILogger? CreateLogger(string categoryName)
     {
         ThrowIfDisposed();
         return _loggerFactory.CreateLogger(categoryName);
     }
 
-    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+    public static void Configure(Action configurationAction) => configurationAction?.Invoke();
+
+    private void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+        if (disposing) _loggerFactory.Dispose();
+        _disposed = true;
+    }
+
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, GetType().FullName!);
 
     private static void ConfigureZLogger(ILoggingBuilder builder, LogLevel logLevel, bool consoleOutput,
         string rollingFilePath, int rollingSizeKB, bool useJsonFormatter)
@@ -52,27 +58,20 @@ public class ZLoggerFactory : ILoggerFactory, IDisposable
         builder.ClearProviders()
             .SetMinimumLevel(logLevel);
 
-        switch (consoleOutput)
+        if (consoleOutput)
         {
-            case true when useJsonFormatter:
-                builder.AddZLoggerConsole(options =>
-                {
-                    options.UseJsonFormatter(formatter =>
-                    {
-                        formatter.IncludeProperties = IncludeProperties.ParameterKeyValues;
-                    });
-                });
-                break;
-            case true:
+            if (useJsonFormatter)
+                builder.AddZLoggerConsole(options => options.UseJsonFormatter(formatter =>
+                    formatter.IncludeProperties = IncludeProperties.ParameterKeyValues));
+            else
                 builder.AddZLoggerConsole();
-                break;
         }
 
-        builder.AddZLoggerRollingFile(x =>
+        builder.AddZLoggerRollingFile(options =>
         {
-            x.RollingInterval = RollingInterval.Day;
-            x.RollingSizeKB = rollingSizeKB;
-            x.FilePathSelector = (timestamp, sequenceNumber) =>
+            options.RollingInterval = RollingInterval.Day;
+            options.RollingSizeKB = rollingSizeKB;
+            options.FilePathSelector = (timestamp, sequenceNumber) =>
                 $"{rollingFilePath}/{timestamp.ToLocalTime():yyyy-MM-dd}_{sequenceNumber:000}.log";
         });
     }

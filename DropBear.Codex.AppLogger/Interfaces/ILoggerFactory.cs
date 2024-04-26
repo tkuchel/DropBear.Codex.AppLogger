@@ -20,5 +20,5 @@ public interface ILoggerFactory
     /// </summary>
     /// <param name="categoryName">The category name for the logger.</param>
     /// <returns>The logger instance.</returns>
-    ILogger CreateLogger(string categoryName);
+    ILogger? CreateLogger(string categoryName);
 }

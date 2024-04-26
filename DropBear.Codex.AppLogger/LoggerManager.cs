@@ -11,8 +11,10 @@ namespace DropBear.Codex.AppLogger;
 /// </summary>
 public sealed class LoggerManager
 {
+#pragma warning disable IDE1006 // Naming Styles
     // ReSharper disable once InconsistentNaming
     private static readonly Lazy<LoggerManager> _instance = new(() => new LoggerManager());
+#pragma warning restore IDE1006 // Naming Styles
     private readonly ConcurrentDictionary<string, ILogger?> _loggerCache = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<Type, ILogger> _loggerTypeCache = new();
     internal ILoggerFactory _loggerFactory;

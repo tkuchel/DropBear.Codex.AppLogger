@@ -23,49 +23,46 @@ public static class ServiceCollectionExtensions
         configure(builder);
         var loggerFactory = builder.Build();
 
+        // Register the custom logger factory as a singleton
         services.AddSingleton(loggerFactory);
+
+        // Register ILogger<> implementation using a custom Logger<> class
         services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
 
         return services;
     }
-    
-    // Making Logger<T> static if it's only used for extension purposes
-    private static class Logger<T> where T : class
-    {
-        // Static members to facilitate logging without direct instantiation
-    }
 
-    // private sealed class Logger<T> : ILogger<T>, IDisposable
-    // {
-    //     private readonly ILogger? _logger;
-    //     private bool _disposed;
-    //
-    //     public Logger(ILoggerFactory factory)
-    //     {
-    //         var categoryName = typeof(T).FullName;
-    //         if (categoryName is not null) _logger = factory.CreateLogger(categoryName);
-    //     }
-    //
-    //     public void Dispose()
-    //     {
-    //         Dispose(disposing: true);
-    //         GC.SuppressFinalize(this);
-    //     }
-    //
-    //     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
-    //         Func<TState, Exception?, string> formatter) => _logger?.Log(logLevel, eventId, state, exception, formatter);
-    //
-    //     public bool IsEnabled(LogLevel logLevel) => _logger is not null && _logger.IsEnabled(logLevel);
-    //
-    //     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => _logger?.BeginScope(state);
-    //
-    //     private void Dispose(bool disposing)
-    //     {
-    //         if (_disposed) return;
-    //         if (disposing) (_logger as IDisposable)?.Dispose();
-    //         _disposed = true;
-    //     }
-    //
-    //     ~Logger() => Dispose(disposing: false);
-    // }
+    /// <summary>
+    ///     Logger implementation for ILogger<T>.
+    /// </summary>
+    /// <typeparam name="T">The type for which the logger is being created.</typeparam>
+    private sealed class Logger<T> : ILogger<T>
+    {
+        private readonly ILogger? _logger;
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="Logger{T}" /> class.
+        /// </summary>
+        /// <param name="factory">The custom logger factory.</param>
+        public Logger(ILoggerFactory factory)
+        {
+            var categoryName = typeof(T).FullName;
+            _logger = factory.CreateLogger(categoryName ?? typeof(T).Name);
+        }
+
+        /// <inheritdoc />
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull =>
+            _logger?.BeginScope(state);
+
+        /// <inheritdoc />
+        public bool IsEnabled(LogLevel logLevel) => _logger is not null && _logger.IsEnabled(logLevel);
+
+        /// <inheritdoc />
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            ArgumentNullException.ThrowIfNull(formatter);
+            _logger?.Log(logLevel, eventId, state, exception, formatter);
+        }
+    }
 }

@@ -1,6 +1,12 @@
-﻿using DropBear.Codex.AppLogger.LoggingFactories;
+﻿using System.Text;
+using DropBear.Codex.AppLogger.LoggingFactories;
 using DropBear.Codex.AppLogger.Utils;
+using DropBear.Codex.AppLogger.Wrappers;
 using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Events;
+using Serilog.Extensions.Logging;
+using Serilog.Formatting.Json;
 using ILoggerFactory = DropBear.Codex.AppLogger.Interfaces.ILoggerFactory;
 
 namespace DropBear.Codex.AppLogger.Builders;
@@ -15,6 +21,7 @@ public class LoggerConfigurationBuilder
     private string _rollingFilePath = "logs/";
     private int _rollingSizeKb = 1024; // Default to 1 MB
     private bool _useJsonFormatter;
+    private bool _useSerilog;
 
     public LoggerConfigurationBuilder UseJsonFormatter(bool useJson = true)
     {
@@ -34,7 +41,8 @@ public class LoggerConfigurationBuilder
 #pragma warning restore MA0015
 #pragma warning restore CA2208
 
-        var directoryExists = await FilePathValidator.ValidateAndPrepareDirectoryAsync(_rollingFilePath).ConfigureAwait(false);
+        var directoryExists =
+            await FilePathValidator.ValidateAndPrepareDirectoryAsync(_rollingFilePath).ConfigureAwait(false);
         if (!directoryExists)
             throw new DirectoryNotFoundException($"Directory {_rollingFilePath} does not exist");
 
@@ -53,6 +61,68 @@ public class LoggerConfigurationBuilder
         return this;
     }
 
-    public ILoggerFactory Build() =>
-        new ZLoggerFactory(_logLevel, _consoleOutput, _rollingFilePath, _rollingSizeKb, _useJsonFormatter);
+    public LoggerConfigurationBuilder UseSerilog(bool useSerilog = true)
+    {
+        _useSerilog = useSerilog;
+        return this;
+    }
+
+    public ILoggerFactory Build()
+    {
+        if (_useSerilog)
+        {
+            var loggerConfiguration = new LoggerConfiguration()
+                .MinimumLevel.Is(ConvertLogLevel(_logLevel));
+
+            if (_consoleOutput)
+            {
+                if (_useJsonFormatter)
+                    loggerConfiguration.WriteTo.Console(new JsonFormatter());
+                else
+                    loggerConfiguration.WriteTo.Console();
+            }
+
+            if (!string.IsNullOrEmpty(_rollingFilePath))
+            {
+                if (_useJsonFormatter)
+                    loggerConfiguration.WriteTo.File(
+                        new JsonFormatter(),
+                        _rollingFilePath,
+                        ConvertLogLevel(_logLevel),
+                        _rollingSizeKb * 1024,
+                        rollingInterval: RollingInterval.Day,
+                        rollOnFileSizeLimit: true,
+                        retainedFileCountLimit: 7,
+                        encoding: Encoding.UTF8);
+                else
+                    loggerConfiguration.WriteTo.File(
+                        _rollingFilePath,
+                        ConvertLogLevel(_logLevel),
+                        "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
+                        fileSizeLimitBytes: _rollingSizeKb * 1024,
+                        rollingInterval: RollingInterval.Day,
+                        rollOnFileSizeLimit: true,
+                        retainedFileCountLimit: 7,
+                        encoding: Encoding.UTF8);
+            }
+
+            var serilogLogger = loggerConfiguration.CreateLogger();
+            return new SerilogLoggerFactoryWrapper(new SerilogLoggerFactory(serilogLogger));
+        }
+
+        return new ZLoggerFactory(_logLevel, _consoleOutput, _rollingFilePath, _rollingSizeKb, _useJsonFormatter);
+    }
+
+    private LogEventLevel ConvertLogLevel(LogLevel logLevel) =>
+        logLevel switch
+        {
+            LogLevel.Trace => LogEventLevel.Verbose,
+            LogLevel.Debug => LogEventLevel.Debug,
+            LogLevel.Information => LogEventLevel.Information,
+            LogLevel.Warning => LogEventLevel.Warning,
+            LogLevel.Error => LogEventLevel.Error,
+            LogLevel.Critical => LogEventLevel.Fatal,
+            LogLevel.None => LogEventLevel.Fatal,
+            _ => LogEventLevel.Information
+        };
 }

@@ -1,7 +1,11 @@
-﻿using DropBear.Codex.AppLogger.Builders;
+﻿#region
+
+using DropBear.Codex.AppLogger.Builders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ILoggerFactory = DropBear.Codex.AppLogger.Interfaces.ILoggerFactory;
+
+#endregion
 
 namespace DropBear.Codex.AppLogger.Extensions;
 
@@ -32,10 +36,7 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    /// <summary>
-    ///     Logger implementation for ILogger<T>.
-    /// </summary>
-    /// <typeparam name="T">The type for which the logger is being created.</typeparam>
+    /// <inheritdoc />
     private sealed class Logger<T> : ILogger<T>
     {
         private readonly ILogger? _logger;
@@ -51,11 +52,16 @@ public static class ServiceCollectionExtensions
         }
 
         /// <inheritdoc />
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull =>
-            _logger?.BeginScope(state);
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+        {
+            return _logger?.BeginScope(state);
+        }
 
         /// <inheritdoc />
-        public bool IsEnabled(LogLevel logLevel) => _logger is not null && _logger.IsEnabled(logLevel);
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            return _logger is not null && _logger.IsEnabled(logLevel);
+        }
 
         /// <inheritdoc />
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,

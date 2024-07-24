@@ -1,14 +1,38 @@
-﻿using Microsoft.Extensions.Logging;
+﻿#region
+
+using Microsoft.Extensions.Logging;
+
+#endregion
 
 namespace DropBear.Codex.AppLogger.Utils;
 
 /// <summary>
 ///     Utility class for validating and preparing file paths.
 /// </summary>
-public static class FilePathValidator
+internal static class FilePathValidator
 {
-    private static readonly ILogger Logger = LoggerFactory.Create(builder => builder.AddConsole())
+    private static readonly ILogger Logger = LoggerFactory.Create(static builder => builder.AddConsole())
         .CreateLogger("FilePathValidator");
+
+    private static readonly Action<ILogger, Exception> LogInvalidDirectoryPath =
+        LoggerMessage.Define(LogLevel.Error, new EventId(1, nameof(LogInvalidDirectoryPath)),
+            "Invalid directory path derived from file path.");
+
+    private static readonly Action<ILogger, Exception?> LogDirectoryDoesNotExist =
+        LoggerMessage.Define(LogLevel.Information, new EventId(2, nameof(LogDirectoryDoesNotExist)),
+            "Directory does not exist, creating directory...");
+
+    private static readonly Action<ILogger, Exception?> LogReadWriteTestPassed =
+        LoggerMessage.Define(LogLevel.Information, new EventId(3, nameof(LogReadWriteTestPassed)),
+            "Directory and file read/write test passed.");
+
+    private static readonly Action<ILogger, Exception?> LogContentMismatch =
+        LoggerMessage.Define(LogLevel.Error, new EventId(4, nameof(LogContentMismatch)),
+            "Mismatch in content of written and read files.");
+
+    private static readonly Action<ILogger, Exception> LogValidationError =
+        LoggerMessage.Define(LogLevel.Error, new EventId(5, nameof(LogValidationError)),
+            "An error occurred during directory validation.");
 
     /// <summary>
     ///     Validates the file path and ensures the directory exists. Tests read/write access.
@@ -26,14 +50,14 @@ public static class FilePathValidator
             var directoryPath = Path.GetDirectoryName(sanitizedFilePath);
             if (string.IsNullOrWhiteSpace(directoryPath))
             {
-                Logger.LogError("Invalid directory path derived from file path.");
+                LogInvalidDirectoryPath(Logger, new ArgumentException("Invalid directory path.", nameof(filePath)));
                 return false;
             }
 
             // Ensure the directory exists
             if (!Directory.Exists(directoryPath))
             {
-                Logger.LogInformation("Directory does not exist, creating directory...");
+                LogDirectoryDoesNotExist(Logger, null);
                 Directory.CreateDirectory(directoryPath);
             }
 
@@ -47,16 +71,16 @@ public static class FilePathValidator
             if (readContent == TestContent)
             {
                 File.Delete(dummyFilePath);
-                Logger.LogInformation("Directory and file read/write test passed.");
+                LogReadWriteTestPassed(Logger, null);
                 return true;
             }
 
-            Logger.LogError("Mismatch in content of written and read files.");
+            LogContentMismatch(Logger, null);
             return false;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "An error occurred during directory validation.");
+            LogValidationError(Logger, ex);
             return false;
         }
     }

@@ -1,17 +1,23 @@
-﻿using System.Collections.Concurrent;
+﻿#region
+
+using System.Collections.Concurrent;
 using DropBear.Codex.AppLogger.Builders;
 using Microsoft.Extensions.Logging;
 using ILoggerFactory = DropBear.Codex.AppLogger.Interfaces.ILoggerFactory;
+
+#endregion
 
 namespace DropBear.Codex.AppLogger;
 
 public sealed class LoggerManager
 {
+#pragma warning disable IDE1006
     // ReSharper disable once InconsistentNaming
-    private static readonly Lazy<LoggerManager> _instance = new(() => new LoggerManager());
+    private static readonly Lazy<LoggerManager> _instance = new(static () => new LoggerManager());
+#pragma warning restore IDE1006
     private readonly ConcurrentDictionary<string, ILogger?> _loggerCache = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<Type, ILogger> _loggerTypeCache = new();
-    internal ILoggerFactory _loggerFactory;
+    private ILoggerFactory _loggerFactory;
 
     private LoggerManager()
     {
@@ -23,8 +29,10 @@ public sealed class LoggerManager
 
     public static LoggerManager Instance => _instance.Value;
 
-    public ILogger? GetLogger(string category) =>
-        _loggerCache.GetOrAdd(category, _loggerFactory.CreateLogger);
+    public ILogger? GetLogger(string category)
+    {
+        return _loggerCache.GetOrAdd(category, _loggerFactory.CreateLogger);
+    }
 
     public ILogger<T> GetLogger<T>()
     {
@@ -32,7 +40,10 @@ public sealed class LoggerManager
         return (ILogger<T>)_loggerTypeCache.GetOrAdd(type, CreateTypedLogger<T>);
     }
 
-    private ILogger CreateTypedLogger<T>(Type type) => _loggerFactory.CreateLogger<T>();
+    private ILogger CreateTypedLogger<T>(Type type)
+    {
+        return _loggerFactory.CreateLogger<T>();
+    }
 
     public void ConfigureLogger(Action<LoggerConfigurationBuilder> configure)
     {
@@ -44,7 +55,10 @@ public sealed class LoggerManager
 
     private void UpdateLoggerFactory(ILoggerFactory newFactory)
     {
-        if (_loggerFactory is IDisposable disposable) disposable.Dispose();
+        if (_loggerFactory is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
 
         _loggerFactory = newFactory;
         _loggerCache.Clear();

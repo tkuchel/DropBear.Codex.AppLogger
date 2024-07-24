@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿#region
+
+using System.Text;
 using DropBear.Codex.AppLogger.LoggingFactories;
 using DropBear.Codex.AppLogger.Utils;
 using DropBear.Codex.AppLogger.Wrappers;
@@ -9,12 +11,14 @@ using Serilog.Extensions.Logging;
 using Serilog.Formatting.Json;
 using ILoggerFactory = DropBear.Codex.AppLogger.Interfaces.ILoggerFactory;
 
+#endregion
+
 namespace DropBear.Codex.AppLogger.Builders;
 
 /// <summary>
 ///     Builder for fluent logger configuration.
 /// </summary>
-public class LoggerConfigurationBuilder
+public sealed class LoggerConfigurationBuilder
 {
     private bool _consoleOutput = true;
     private LogLevel _logLevel = LogLevel.Information;
@@ -37,14 +41,18 @@ public class LoggerConfigurationBuilder
         if (string.IsNullOrEmpty(_rollingFilePath))
 #pragma warning disable CA2208
 #pragma warning disable MA0015
+        {
             throw new ArgumentException("Rolling file path cannot be null or empty", nameof(_rollingFilePath));
+        }
 #pragma warning restore MA0015
 #pragma warning restore CA2208
 
         var directoryExists =
             await FilePathValidator.ValidateAndPrepareDirectoryAsync(_rollingFilePath).ConfigureAwait(false);
         if (!directoryExists)
+        {
             throw new DirectoryNotFoundException($"Directory {_rollingFilePath} does not exist");
+        }
 
         return this;
     }
@@ -77,14 +85,19 @@ public class LoggerConfigurationBuilder
             if (_consoleOutput)
             {
                 if (_useJsonFormatter)
+                {
                     loggerConfiguration.WriteTo.Console(new JsonFormatter());
+                }
                 else
+                {
                     loggerConfiguration.WriteTo.Console();
+                }
             }
 
             if (!string.IsNullOrEmpty(_rollingFilePath))
             {
                 if (_useJsonFormatter)
+                {
                     loggerConfiguration.WriteTo.File(
                         new JsonFormatter(),
                         _rollingFilePath,
@@ -94,16 +107,18 @@ public class LoggerConfigurationBuilder
                         rollOnFileSizeLimit: true,
                         retainedFileCountLimit: 7,
                         encoding: Encoding.UTF8);
+                }
                 else
+                {
                     loggerConfiguration.WriteTo.File(
                         _rollingFilePath,
                         ConvertLogLevel(_logLevel),
-                        "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
                         fileSizeLimitBytes: _rollingSizeKb * 1024,
                         rollingInterval: RollingInterval.Day,
                         rollOnFileSizeLimit: true,
                         retainedFileCountLimit: 7,
                         encoding: Encoding.UTF8);
+                }
             }
 
             var serilogLogger = loggerConfiguration.CreateLogger();
@@ -113,8 +128,9 @@ public class LoggerConfigurationBuilder
         return new ZLoggerFactory(_logLevel, _consoleOutput, _rollingFilePath, _rollingSizeKb, _useJsonFormatter);
     }
 
-    private LogEventLevel ConvertLogLevel(LogLevel logLevel) =>
-        logLevel switch
+    private static LogEventLevel ConvertLogLevel(LogLevel logLevel)
+    {
+        return logLevel switch
         {
             LogLevel.Trace => LogEventLevel.Verbose,
             LogLevel.Debug => LogEventLevel.Debug,
@@ -125,4 +141,5 @@ public class LoggerConfigurationBuilder
             LogLevel.None => LogEventLevel.Fatal,
             _ => LogEventLevel.Information
         };
+    }
 }

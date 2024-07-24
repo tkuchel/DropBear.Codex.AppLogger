@@ -36,6 +36,7 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    #pragma warning disable CA1812
     /// <inheritdoc />
     private sealed class Logger<T> : ILogger<T>
     {
@@ -71,4 +72,5 @@ public static class ServiceCollectionExtensions
             _logger?.Log(logLevel, eventId, state, exception, formatter);
         }
     }
+    #pragma warning restore CA1812
 }
